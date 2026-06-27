@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YOUR NAME · Personal Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #050508;
+    --green: #00FF88;
+    --blue: #4DAAFF;
+    --purple: #8B5CF6;
+    --text: #C8D0DC;
+    --text-dim: #5A6275;
+    --card-bg: rgba(255,255,255,0.03);
+    --card-border: rgba(255,255,255,0.07);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── CANVAS BACKGROUND ── */
+  #bgCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.35;
+  }
+
+  /* ── SCANLINE OVERLAY ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── HERO SECTION ── */
+  #hero {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    padding: 0 2rem;
+  }
+
+  .terminal-window {
+    background: rgba(5, 5, 10, 0.85);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 12px;
+    padding: 2rem 2.5rem 2.5rem;
+    max-width: 680px;
+    width: 100%;
+    backdrop-filter: blur(20px);
+    box-shadow:
+      0 0 0 1px rgba(0,255,136,0.05),
+      0 0 60px rgba(0,255,136,0.06),
+      0 32px 80px rgba(0,0,0,0.6);
+    text-align: left;
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.8rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  .dot-r { background: #FF5F57; }
+  .dot-y { background: #FEBC2E; }
+  .dot-g { background: #28C840; }
+
+  .terminal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    margin-left: auto;
+    letter-spacing: 0.05em;
+  }
+
+  .prompt-line {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    margin-bottom: 1.4rem;
+  }
+
+  .prompt-line span.cmd { color: var(--green); }
+
+  .hero-name {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 4rem);
+    font-weight: 700;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    min-height: 1.2em;
+  }
+
+  .cursor {
+    display: inline-block;
+    width: 3px;
+    height: 0.9em;
+    background: var(--green);
+    margin-left: 4px;
+    vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .hero-school {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--green);
+    margin-bottom: 0.6rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.6s ease 0.2s;
+  }
+
+  .hero-desc {
+    font-size: 0.92rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.6s ease 0.4s;
+  }
+
+  .hero-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 1.4rem;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.6s ease 0.6s;
+  }
+
+  .tag {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid rgba(0,255,136,0.2);
+    color: var(--green);
+    background: rgba(0,255,136,0.05);
+    letter-spacing: 0.04em;
+  }
+
+  .revealed {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+
+  /* ── SCROLL DOWN BUTTON ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 1s ease 2.5s;
+    z-index: 3;
+  }
+
+  .scroll-hint.show { opacity: 1; }
+
+  .scroll-hint:hover .scroll-arrow { border-color: var(--green); }
+  .scroll-hint:hover .scroll-label { color: var(--green); }
+
+  .scroll-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+
+  .scroll-arrow {
+    width: 36px; height: 36px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s;
+    animation: bounce 2s ease-in-out infinite;
+  }
+
+  .scroll-arrow svg { width: 14px; height: 14px; stroke: var(--text-dim); }
+  .scroll-hint:hover .scroll-arrow svg { stroke: var(--green); }
+
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(5px); }
+  }
+
+  /* ── LINKS SECTION ── */
+  #links {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 2rem;
+    gap: 0;
+  }
+
+  /* Avatar */
+  .avatar-wrapper {
+    margin-bottom: 2.4rem;
+    position: relative;
+    display: inline-block;
+  }
+
+  .avatar-ring {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 1.5px solid transparent;
+    background: linear-gradient(135deg, var(--green), var(--blue)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    animation: spin 6s linear infinite;
+  }
+
+  .avatar-ring-2 {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 1px dashed rgba(0,255,136,0.18);
+    animation: spin 12s linear infinite reverse;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .avatar {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--green);
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+    display: none;
+  }
+
+  .avatar img.loaded { display: block; }
+
+  .section-eyebrow {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  .section-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #fff;
+    margin-bottom: 0.5rem;
+    text-align: center;
+  }
+
+  .section-sub {
+    font-size: 0.88rem;
+    color: var(--text-dim);
+    text-align: center;
+    margin-bottom: 3rem;
+    line-height: 1.6;
+    max-width: 360px;
+  }
+
+  /* ── CARDS ── */
+  .cards {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .card {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1.2rem 1.5rem;
+    border-radius: 14px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    text-decoration: none;
+    color: var(--text);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    group: true;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .card-blog::before { background: radial-gradient(ellipse at left center, rgba(0,255,136,0.07), transparent 70%); }
+  .card-about::before { background: radial-gradient(ellipse at left center, rgba(77,170,255,0.07), transparent 70%); }
+  .card-github::before { background: radial-gradient(ellipse at left center, rgba(139,92,246,0.07), transparent 70%); }
+
+  .card:hover { transform: translateX(4px); }
+  .card-blog:hover { border-color: rgba(0,255,136,0.3); box-shadow: 0 0 30px rgba(0,255,136,0.06); }
+  .card-about:hover { border-color: rgba(77,170,255,0.3); box-shadow: 0 0 30px rgba(77,170,255,0.06); }
+  .card-github:hover { border-color: rgba(139,92,246,0.3); box-shadow: 0 0 30px rgba(139,92,246,0.06); }
+  .card:hover::before { opacity: 1; }
+
+  .card-icon {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .card-blog .card-icon { background: rgba(0,255,136,0.08); }
+  .card-about .card-icon { background: rgba(77,170,255,0.08); }
+  .card-github .card-icon { background: rgba(139,92,246,0.08); }
+
+  .card-icon svg { width: 22px; height: 22px; }
+  .card-blog .card-icon svg { stroke: var(--green); }
+  .card-about .card-icon svg { stroke: var(--blue); }
+  .card-github .card-icon svg { stroke: var(--purple); }
+
+  .card-body { flex: 1; }
+
+  .card-label {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 3px;
+  }
+
+  .card-desc {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .card-arrow {
+    opacity: 0.3;
+    transition: opacity 0.25s, transform 0.25s;
+    flex-shrink: 0;
+  }
+
+  .card:hover .card-arrow {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+
+  .card-arrow svg { width: 18px; height: 18px; stroke: currentColor; }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    padding: 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    letter-spacing: 0.06em;
+  }
+
+  footer span { color: var(--green); }
+
+  /* ── LOADING OVERLAY ── */
+  #loader {
+    position: fixed;
+    inset: 0;
+    background: var(--black);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    transition: opacity 0.6s ease, visibility 0.6s;
+  }
+
+  #loader.hide {
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .loader-bar {
+    width: 200px;
+    height: 2px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .loader-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+    width: 0%;
+    transition: width 0.05s linear;
+    border-radius: 2px;
+  }
+
+  .loader-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* ── GLITCH NAME EFFECT ── */
+  @keyframes glitch1 {
+    0%, 90%, 100% { clip-path: none; transform: none; }
+    92% { clip-path: polygon(0 20%, 100% 20%, 100% 40%, 0 40%); transform: translate(-3px, 0); }
+    94% { clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%); transform: translate(3px, 0); }
+    96% { clip-path: none; transform: none; }
+  }
+
+  .glitch-wrapper {
+    position: relative;
+    display: inline-block;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0,255,136,0.3); }
+
+  @media (max-width: 480px) {
+    .terminal-window { padding: 1.5rem 1.4rem 2rem; }
+    .hero-name { font-size: 2rem; }
+    .cards { max-width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div id="loader">
+  <div class="loader-text" id="loaderText">INITIALIZING...</div>
+  <div class="loader-bar"><div class="loader-fill" id="loaderFill"></div></div>
+</div>
+
+<!-- Particle canvas -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="terminal-window">
+    <div class="terminal-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <div class="terminal-title">~/whoami</div>
+    </div>
+
+    <div class="prompt-line"><span class="cmd">$</span> whoami</div>
+
+    <h1 class="hero-name glitch-wrapper">
+      <span id="typedName"></span><span class="cursor"></span>
+    </h1>
+    <p class="hero-school" id="heroSchool">// 某知名高校 · 计算机科学与技术</p>
+    <p class="hero-desc" id="heroDesc">
+      Builder · Researcher · Open Source Enthusiast<br>
+      对世界抱有好奇心，用代码表达想法。
+    </p>
+    <div class="hero-tags" id="heroTags">
+      <span class="tag">TypeScript</span>
+      <span class="tag">React</span>
+      <span class="tag">Rust</span>
+      <span class="tag">Machine Learning</span>
+      <span class="tag">Open Source</span>
+    </div>
+  </div>
+
+  <div class="scroll-hint" id="scrollHint" onclick="document.getElementById('links').scrollIntoView({behavior:'smooth'})">
+    <div class="scroll-label">Explore</div>
+    <div class="scroll-arrow">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ── LINKS ── -->
+<section id="links">
+  <div class="avatar-wrapper">
+    <div class="avatar-ring-2"></div>
+    <div class="avatar-ring"></div>
+    <div class="avatar" id="avatarEl">
+      <!-- 替换 src 为你的头像图片 -->
+      <img id="avatarImg" src="" alt="avatar" onerror="this.style.display='none'">
+      <span id="avatarFallback">YN</span>
+    </div>
+  </div>
+
+  <p class="section-eyebrow">Navigation</p>
+  <h2 class="section-title">My Digital Space</h2>
+  <p class="section-sub">探索我的写作、关于我的故事，<br>以及我的开源世界。</p>
+
+  <div class="cards">
+    <!-- Blog -->
+    <a class="card card-blog" href="#" target="_blank" rel="noopener">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">Personal Blog</div>
+        <div class="card-desc">技术文章 · 思维碎片 · 实验记录</div>
+      </div>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </a>
+
+    <!-- About -->
+    <a class="card card-about" href="#" target="_blank" rel="noopener">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">About Me</div>
+        <div class="card-desc">我是谁 · 我在做什么 · 我的故事</div>
+      </div>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </a>
+
+    <!-- GitHub -->
+    <a class="card card-github" href="https://github.com/yourusername" target="_blank" rel="noopener">
+      <div class="card-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <div class="card-label">GitHub</div>
+        <div class="card-desc">开源项目 · 代码仓库 · 贡献记录</div>
+      </div>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <span>©</span> 2025 · Built with <span>❤</span> · Powered by curiosity
+</footer>
+
+<script>
+// ── CONFIG: 修改这里 ──────────────────────────────
+const CONFIG = {
+  name: "Your Name",          // 你的名字
+  school: "// 某知名高校 · 计算机科学与技术",
+  desc: "Builder · Researcher · Open Source Enthusiast\n对世界抱有好奇心，用代码表达想法。",
+  tags: ["TypeScript", "React", "Rust", "Machine Learning", "Open Source"],
+  avatarInitials: "YN",       // 头像文字（无图片时显示）
+  avatarSrc: "",              // 头像图片URL，留空则显示文字
+  blogUrl: "#",               // 博客链接
+  aboutUrl: "#",              // 个人介绍页链接
+  githubUrl: "https://github.com/yourusername", // GitHub链接
+};
+// ─────────────────────────────────────────────────
+
+// Apply config
+document.querySelector('.hero-school').textContent = CONFIG.school;
+document.querySelector('.hero-desc').innerHTML = CONFIG.desc.replace('\n','<br>');
+document.querySelectorAll('.tag').forEach((t,i) => { if(CONFIG.tags[i]) t.textContent = CONFIG.tags[i]; });
+document.querySelector('#avatarFallback').textContent = CONFIG.avatarInitials;
+document.querySelectorAll('.card-blog').forEach(el => el.href = CONFIG.blogUrl);
+document.querySelectorAll('.card-about').forEach(el => el.href = CONFIG.aboutUrl);
+document.querySelectorAll('.card-github').forEach(el => el.href = CONFIG.githubUrl);
+
+if (CONFIG.avatarSrc) {
+  const img = document.getElementById('avatarImg');
+  img.src = CONFIG.avatarSrc;
+  img.onload = () => { img.classList.add('loaded'); document.getElementById('avatarFallback').style.display = 'none'; };
+}
+
+// ── LOADER ────────────────────────────────────────
+const loaderSteps = [
+  { text: "LOADING ASSETS...", pct: 25 },
+  { text: "INITIALIZING UI...", pct: 55 },
+  { text: "COMPILING...", pct: 80 },
+  { text: "READY.", pct: 100 },
+];
+
+let stepIdx = 0;
+const loaderFill = document.getElementById('loaderFill');
+const loaderText = document.getElementById('loaderText');
+const loader = document.getElementById('loader');
+
+function runLoader() {
+  if (stepIdx >= loaderSteps.length) {
+    setTimeout(() => {
+      loader.classList.add('hide');
+      startHero();
+    }, 300);
+    return;
+  }
+  const s = loaderSteps[stepIdx++];
+  loaderText.textContent = s.text;
+  loaderFill.style.width = s.pct + '%';
+  setTimeout(runLoader, 300 + Math.random() * 200);
+}
+
+setTimeout(runLoader, 200);
+
+// ── PARTICLE BACKGROUND ───────────────────────────
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+const PARTICLE_COUNT = 70;
+const particles = [];
+
+class Particle {
+  constructor() { this.reset(true); }
+  reset(init = false) {
+    this.x = Math.random() * canvas.width;
+    this.y = init ? Math.random() * canvas.height : canvas.height + 10;
+    this.vy = -(0.3 + Math.random() * 0.7);
+    this.vx = (Math.random() - 0.5) * 0.3;
+    this.size = 1 + Math.random() * 2;
+    this.alpha = 0.1 + Math.random() * 0.5;
+    this.color = Math.random() > 0.6 ? '#00FF88' : Math.random() > 0.5 ? '#4DAAFF' : '#8B5CF6';
+    this.life = 0;
+    this.maxLife = 200 + Math.random() * 300;
+  }
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.life++;
+    if (this.y < -10 || this.life > this.maxLife) this.reset();
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha * (1 - this.life / this.maxLife);
+    ctx.fillStyle = this.color;
+    ctx.shadowBlur = 8;
+    ctx.shadowColor = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+// Grid lines
+const GRID_COLS = 12, GRID_ROWS = 8;
+function drawGrid() {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(0,255,136,0.03)';
+  ctx.lineWidth = 1;
+  for (let c = 0; c <= GRID_COLS; c++) {
+    const x = (canvas.width / GRID_COLS) * c;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let r = 0; r <= GRID_ROWS; r++) {
+    const y = (canvas.height / GRID_ROWS) * r;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function animateBg() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawGrid();
+  particles.forEach(p => { p.update(); p.draw(); });
+  requestAnimationFrame(animateBg);
+}
+animateBg();
+
+// ── HERO TYPEWRITER ───────────────────────────────
+function startHero() {
+  const el = document.getElementById('typedName');
+  const text = CONFIG.name;
+  let i = 0;
+
+  function type() {
+    if (i <= text.length) {
+      el.textContent = text.slice(0, i);
+      i++;
+      setTimeout(type, 80 + Math.random() * 50);
+    } else {
+      // Reveal other elements
+      setTimeout(() => {
+        document.getElementById('heroSchool').classList.add('revealed');
+        document.getElementById('heroDesc').classList.add('revealed');
+        document.getElementById('heroTags').classList.add('revealed');
+        document.getElementById('scrollHint').classList.add('show');
+      }, 300);
+    }
+  }
+  type();
+}
+
+// ── CARD HOVER RIPPLE ─────────────────────────────
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    card.style.setProperty('--mx', x + 'px');
+    card.style.setProperty('--my', y + 'px');
+  });
+});
+</script>
+</body>
+</html>
