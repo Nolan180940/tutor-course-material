@@ -12,6 +12,8 @@
 
 # production
 /build
+/release/
+/.cache/electron-builder/
 
 # misc
 .DS_Store
@@ -32,3 +34,12 @@ next-env.d.ts
 
 # vercel
 .vercel
+.opencode
+
+# python
+.venv/
+__pycache__/
+*.pyc
+
+# npm-cache
+.npm-cache/
