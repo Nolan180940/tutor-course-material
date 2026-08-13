@@ -1,0 +1,158 @@
+% ============================================================
+% resume_format_rebuilt.tex — 复现版 NYU 简历模板
+% 由 analyze_resume.py 测量 Resume Format.pdf 后重建
+% 每个参数均在注释中标注实测来源（见 spec_report.md §7）
+% 字体: 真 Garamond（三件套），需将同目录三个 ttf 上传到 Overleaf 根目录
+% 编译: XeLaTeX / LuaLaTeX
+% ============================================================
+\documentclass[letterpaper]{article}
+
+% --- 边距: 实测 左29.4 / 右30.2 / 上31.6≈32 / 下60.5≈60（spec_report §2/§7）
+\usepackage[
+  letterpaper,
+  left=29.4pt,
+  right=30.2pt,
+  top=32pt,
+  bottom=60pt,
+]{geometry}
+\usepackage{fontspec}
+\usepackage{enumitem}
+
+% ---------- Garamond（与原 PDF 内嵌字体同源） ----------
+\setmainfont{Garamond}[
+  Path=./,
+  UprightFont=Garamond.ttf,
+  BoldFont=Garamond-Bold.ttf,
+  ItalicFont=Garamond-Italic.ttf,
+  BoldItalicFont=Garamond-Italic.ttf,
+  Ligatures=TeX,
+]
+
+\pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+
+% ---------- 正文 9.96pt / 行距 12pt（实测主节奏 ≈12pt，§4/§7） ----------
+\fontsize{9.96}{12}\selectfont
+
+% 行距微调宏: 复刻原 PDF 的不规则行距（约 10/14pt 间距）
+\newcommand{\bmin}{\par\vspace{-2pt}}
+\newcommand{\bplus}{\par\vspace{2pt}}
+
+% ---------- 标题: 实测 EDUCATION 11.04pt 前距 ≈5.4pt（取 6pt），其余 4.2~4.7pt（取 4pt），无线条 ----------
+\newcommand{\bighead}[1]{\par\vspace{6pt}{\fontsize{11.04}{12}\selectfont\textbf{#1}}\par}
+\newcommand{\head}[1]{\par\vspace{4pt}\textbf{#1}\par}
+
+% ---------- 条目: 粗体左 + 右对齐（右缘 581.8pt == 30.2pt 右边距，实测吻合） ----------
+\newcommand{\entry}[2]{\par\textbf{#1}\hfill #2\par}
+\newcommand{\entryit}[2]{\par\textit{#1}\hfill #2\par}
+
+% ---------- 项目符号: leftmargin=13.6pt ⇒ 正文起点 43.8pt（实测首字符 x0 逐点重合，§6） ----------
+\newenvironment{bull}{\begin{itemize}[leftmargin=13.6pt, itemsep=0pt, topsep=0pt, parsep=0pt, partopsep=0pt, label=\textbullet\,]}{\end{itemize}}
+
+\begin{document}
+
+% ---------- 姓名: 21.96pt 粗体居中（实测中心 308.7 ≈ 页面中心） ----------
+{\centering
+  {\fontsize{21.96}{22}\selectfont\textbf{NAME}}\par
+  \vspace{2pt}{\fontsize{11.04}{22}\selectfont Email \textbar{} Address, City, State/Country \textbar{} PHONE NUMBER}\par
+}
+
+% ---------- 教育 ----------
+\bighead{EDUCATION}
+\entry{New York University, NYU Shanghai \textbar{} Leonard N. Stern School of Business (Study-away location)}{New York, NY}
+\entryit{Major (+Concentration/Minor if Applicable)}{Expected Month, Year}
+% 注意: 原 PDF 中 GPA/Organizations 两行无项目符号（spec_report §3 行6/7）
+\par\textbf{GPA: X.X/4.0} \textbar{} \textbf{Relevant Coursework:} Relevant Course Work\par
+\par\textbf{Organizations:} Organization (Role)\par
+
+% ---------- 职业经历 ----------
+\head{\textbf{PROFESSIONAL EXPERIENCE} (\textit{In chronological order})}
+\entry{Experience 1}{City, State/Country}
+\entryit{Latest Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+\entryit{Previous Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+
+\entry{Experience 2}{City, State/Country}
+\entryit{Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+
+\bmin
+\entry{Experience 3}{City, State/Country}
+\entryit{Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+
+\entry{Experience 4}{City, State/Country}
+\bmin
+\entryit{Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+
+% ---------- 领导力与课外活动 ----------
+\head{\textbf{LEADERSHIP \& EXTRACURRICULAR ACTIVITIES}}
+\bplus
+\entry{TAMID -- Shanghai Chapter: Business Honors Society}{Shanghai, China}
+\entryit{Latest Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+\entryit{Previous Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+\entryit{Previous Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+
+\entry{Experience 2}{City, State/Country}
+\entryit{Role}{Month Year - Month Year}
+\begin{bull}
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+  \item Action, context, result (one line, fill to end)
+  \bplus
+  \item Action, context, result (one line, fill to end)
+\end{bull}
+
+% ---------- 技能与兴趣 ----------
+\head{\textbf{SKILLS \& INTERESTS}}
+\par\textbf{Languages \& Skills:} Language 1 (Fluent), Language 2 (Limited), Technical Skills on platforms\par
+\par\textbf{Interests:} Hobbies! (Go crazy)\par
+
+\end{document}
