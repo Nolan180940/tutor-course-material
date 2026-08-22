@@ -31,3 +31,6 @@ Thumbs.db
 # 环境变量
 .env
 .opencode
+
+# 敏感文件
+20260728/SKILL.md
