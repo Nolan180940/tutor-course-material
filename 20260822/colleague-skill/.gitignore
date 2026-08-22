@@ -1,13 +1,4 @@
 # Generated dot-skill outputs (user data, not committed)
-skills/*
-!skills/colleague/
-skills/colleague/*
-!skills/colleague/example_zhangsan/
-!skills/colleague/example_zhangsan/**
-!skills/colleague/example_tianyi/
-!skills/colleague/example_tianyi/**
-!skills/colleague/example_jiaxiu/
-!skills/colleague/example_jiaxiu/**
 
 # Python
 __pycache__/
